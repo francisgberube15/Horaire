@@ -2,146 +2,164 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
 <title>Horaire tactile</title>
 
 <style>
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
 
 body {
   margin: 0;
-  padding: 15px;
   font-family: Arial, sans-serif;
-  background: #f4f4f4;
+  background: #f3f3f3;
   color: #222;
+  touch-action: manipulation;
 }
 
-.toolbar {
+header {
+  background: white;
+  padding: 12px;
+  border-bottom: 1px solid #ccc;
+}
+
+.topbar {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 16px;
   flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-
-button, select, input {
-  min-height: 46px;
-  font-size: 16px;
-  border: 1px solid #bbb;
-  border-radius: 8px;
-  background: white;
-  padding: 8px 12px;
 }
 
 button {
+  font-size: 18px;
+  padding: 10px 18px;
+  border: 1px solid #999;
+  border-radius: 8px;
+  background: white;
   cursor: pointer;
 }
 
-.week-title {
-  font-size: 22px;
+button:active {
+  background: #ddd;
+}
+
+#weekTitle {
+  font-size: 24px;
   font-weight: bold;
-  min-width: 280px;
+  min-width: 300px;
   text-align: center;
 }
 
-.board {
+.schedule-wrap {
   overflow-x: auto;
-  background: white;
-  border: 1px solid #aaa;
-  border-radius: 10px;
+  padding: 12px;
 }
 
 table {
-  border-collapse: collapse;
   width: 100%;
-  min-width: 1100px;
+  min-width: 1000px;
+  border-collapse: collapse;
   table-layout: fixed;
-}
-
-th, td {
-  border: 1px solid #aaa;
-}
-
-th {
-  height: 50px;
-  background: #e9ecef;
-}
-
-th:first-child {
-  width: 135px;
-}
-
-td {
-  height: 125px;
-  position: relative;
   background: white;
 }
 
-.team {
+th, td {
+  border: 2px solid #555;
+}
+
+th {
+  background: #e9e9e9;
+  height: 55px;
+  font-size: 20px;
+}
+
+.team-cell {
+  width: 160px;
+  padding: 6px;
   background: #f5f5f5;
-  padding: 5px;
 }
 
-.team input {
+.team-name {
   width: 100%;
-  text-align: center;
+  font-size: 18px;
   font-weight: bold;
+  border: 0;
+  background: transparent;
+  text-align: center;
+  padding: 8px 4px;
 }
 
-.cell {
-  position: relative;
-  width: 100%;
-  height: 123px;
+.job-cell {
+  height: 110px;
+  vertical-align: middle;
+  text-align: center;
+  padding: 6px;
   cursor: pointer;
+  position: relative;
 }
 
-.cell canvas {
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
+.job-cell:active {
+  background: #eee;
 }
 
-.zoom-label {
-  position: absolute;
-  right: 5px;
-  bottom: 5px;
-  background: rgba(255,255,255,.9);
-  border-radius: 5px;
-  padding: 3px 6px;
-  font-size: 12px;
+.cell-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: "Comic Sans MS", "Segoe Print", cursive;
+  font-size: 21px;
+  line-height: 1.15;
 }
 
 /* ÉDITEUR */
 
-#editor {
+#editorOverlay {
   display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  z-index: 1000;
+  padding: 20px;
 }
 
-.editor-toolbar {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 10px;
-}
-
-.editor-title {
-  font-size: 22px;
-  font-weight: bold;
-  flex: 1;
-}
-
-.write-area {
+#editorBox {
   width: 100%;
-  height: 65vh;
-  min-height: 350px;
+  height: 100%;
+  max-width: 1200px;
+  margin: auto;
   background: white;
-  border: 2px solid #999;
-  border-radius: 12px;
-  position: relative;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
-#bigCanvas {
+#editorHeader {
+  padding: 12px 16px;
+  background: #eee;
+  font-size: 22px;
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#canvasWrap {
+  flex: 1;
+  position: relative;
+  background:
+    repeating-linear-gradient(
+      white,
+      white 49px,
+      #d9e4f2 50px
+    );
+  overflow: hidden;
+}
+
+#writingCanvas {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -149,678 +167,665 @@ td {
   touch-action: none;
 }
 
-.active {
-  border: 3px solid #333;
+#editorTools {
+  padding: 12px;
+  background: #eee;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+#recognizeBtn {
+  background: #dff1df;
+}
+
+#doneBtn {
+  background: #d9e9ff;
   font-weight: bold;
 }
 
-.done {
-  font-weight: bold;
-  font-size: 18px;
-}
-
-.status {
-  font-size: 14px;
-  color: #555;
-}
-
-.help {
-  margin-top: 8px;
-  font-size: 14px;
-  color: #555;
+#status {
+  padding: 5px 12px;
+  min-height: 28px;
+  text-align: center;
+  font-size: 16px;
 }
 </style>
 </head>
 
 <body>
 
-<div id="schedule">
+<header>
+  <div class="topbar">
+    <button id="prevWeek">◀ Semaine précédente</button>
+    <div id="weekTitle"></div>
+    <button id="nextWeek">Semaine suivante ▶</button>
+  </div>
+</header>
 
-<div class="toolbar">
-
-<button id="previous">‹</button>
-
-<div class="week-title" id="weekTitle">
-Horaire
-</div>
-
-<button id="next">›</button>
-
-<button id="newWeek">
-+ Nouvelle semaine
-</button>
-
-<select id="weekSelect"></select>
-
-<span class="status" id="status">
-Sauvegarde automatique
-</span>
-
-</div>
-
-<div class="board">
-
+<div class="schedule-wrap">
 <table>
-
-<thead>
-<tr>
-<th>Équipe</th>
-<th>Lundi</th>
-<th>Mardi</th>
-<th>Mercredi</th>
-<th>Jeudi</th>
-<th>Vendredi</th>
-<th>Samedi</th>
-<th>Dimanche</th>
-</tr>
-</thead>
-
-<tbody id="scheduleBody"></tbody>
-
+  <thead>
+    <tr>
+      <th>Équipe</th>
+      <th>Lundi</th>
+      <th>Mardi</th>
+      <th>Mercredi</th>
+      <th>Jeudi</th>
+      <th>Vendredi</th>
+      <th>Samedi</th>
+      <th>Dimanche</th>
+    </tr>
+  </thead>
+  <tbody id="scheduleBody"></tbody>
 </table>
-
 </div>
 
-<div class="help">
-Touchez une case pour l'agrandir et écrire avec le S Pen.
+<div id="editorOverlay">
+  <div id="editorBox">
+
+    <div id="editorHeader">
+      <span id="editorTitle">Écriture</span>
+      <button id="cancelBtn">✕ Fermer</button>
+    </div>
+
+    <div id="canvasWrap">
+      <canvas id="writingCanvas"></canvas>
+    </div>
+
+    <div id="status"></div>
+
+    <div id="editorTools">
+      <button id="penBtn">✏️ Crayon</button>
+      <button id="eraserBtn">🧽 Efface</button>
+      <button id="clearBtn">🗑 Effacer tout</button>
+      <button id="recognizeBtn">✨ Reconnaître l'écriture</button>
+      <button id="doneBtn">✓ Terminé</button>
+    </div>
+
+  </div>
 </div>
-
-</div>
-
-
-<!-- GRANDE CASE -->
-
-<div id="editor">
-
-<div class="editor-toolbar">
-
-<div class="editor-title" id="editorTitle">
-Équipe
-</div>
-
-<button id="pen" class="active">
-✍️ Stylet
-</button>
-
-<button id="eraser">
-🧽 Gomme
-</button>
-
-<button id="clear">
-Effacer tout
-</button>
-
-<button id="done" class="done">
-✓ Terminé
-</button>
-
-</div>
-
-<div class="write-area">
-
-<canvas id="bigCanvas"></canvas>
-
-</div>
-
-<div class="help">
-Écrivez dans cette grande zone avec le S Pen.
-</div>
-
-</div>
-
 
 <script>
+const WORKER_URL =
+  "https://horaire-myscript.francis-g-berube.workers.dev/";
 
-const days = [
-"Lundi",
-"Mardi",
-"Mercredi",
-"Jeudi",
-"Vendredi",
-"Samedi",
-"Dimanche"
+const DAYS = [
+  "Lundi",
+  "Mardi",
+  "Mercredi",
+  "Jeudi",
+  "Vendredi",
+  "Samedi",
+  "Dimanche"
 ];
 
-let teams = [
-"Équipe 1",
-"Équipe 2",
-"Équipe 3",
-"Équipe 4",
-"Équipe 5",
-"Équipe 6"
-];
-
-let weeks = [];
-
-let currentWeek = 0;
-
-let activeCell = null;
-
-let drawingMode = "pen";
-
-
-/* =========================
-   SAUVEGARDE
-========================= */
-
-function saveData(){
-
-localStorage.setItem(
-"horaireTactile",
-JSON.stringify({
-teams,
-weeks,
-currentWeek
-})
-);
-
-document.getElementById("status").textContent =
-"✓ Enregistré";
-
-}
-
-
-function loadData(){
-
-const saved =
-localStorage.getItem("horaireTactile");
-
-if(saved){
-
-try{
-
-const data = JSON.parse(saved);
-
-teams = data.teams || teams;
-
-weeks = data.weeks || [];
-
-currentWeek = data.currentWeek || 0;
-
-}catch(e){}
-
-}
-
-if(weeks.length === 0){
-
-weeks.push({
-name:"Semaine 1",
-draw:{}
-});
-
-}
-
-}
-
-loadData();
-
-
-/* =========================
-   CANVAS
-========================= */
-
-function setupCanvas(canvas){
-
-const rect =
-canvas.getBoundingClientRect();
-
-const ratio =
-window.devicePixelRatio || 1;
-
-canvas.width =
-rect.width * ratio;
-
-canvas.height =
-rect.height * ratio;
-
-const ctx =
-canvas.getContext("2d");
-
-ctx.scale(ratio,ratio);
-
-ctx.lineCap = "round";
-ctx.lineJoin = "round";
-
-}
-
-
-function loadDrawing(canvas,data){
-
-if(!data) return;
-
-const img = new Image();
-
-img.onload = function(){
-
-const rect =
-canvas.getBoundingClientRect();
-
-canvas.getContext("2d")
-.drawImage(
-img,
-0,
-0,
-rect.width,
-rect.height
-);
-
-};
-
-img.src = data;
-
-}
-
-
-/* =========================
-   TABLEAU
-========================= */
-
-function render(){
-
-const body =
-document.getElementById("scheduleBody");
-
-body.innerHTML = "";
-
-document.getElementById("weekTitle")
-.textContent =
-weeks[currentWeek].name;
-
-
-const select =
-document.getElementById("weekSelect");
-
-select.innerHTML = "";
-
-weeks.forEach((week,index)=>{
-
-const option =
-document.createElement("option");
-
-option.value = index;
-option.textContent = week.name;
-
-select.appendChild(option);
-
-});
-
-select.value = currentWeek;
-
-
-teams.forEach((team,row)=>{
-
-const tr =
-document.createElement("tr");
-
-
-/* NOM ÉQUIPE */
-
-const teamCell =
-document.createElement("td");
-
-teamCell.className =
-"team";
-
-const input =
-document.createElement("input");
-
-input.value = team;
-
-input.addEventListener(
-"change",
-()=>{
-
-teams[row] =
-input.value || "Équipe "+(row+1);
-
-saveData();
-
-});
-
-teamCell.appendChild(input);
-
-tr.appendChild(teamCell);
-
-
-/* JOURS */
-
-days.forEach((day,column)=>{
-
-const td =
-document.createElement("td");
-
-const cell =
-document.createElement("div");
-
-cell.className =
-"cell";
-
-const canvas =
-document.createElement("canvas");
-
-const label =
-document.createElement("div");
-
-label.className =
-"zoom-label";
-
-label.textContent =
-"↗ Agrandir";
-
-cell.appendChild(canvas);
-cell.appendChild(label);
-
-td.appendChild(cell);
-
-tr.appendChild(td);
-
-
-const key =
-row+"_"+column;
-
-
-setTimeout(()=>{
-
-setupCanvas(canvas);
-
-loadDrawing(
-canvas,
-weeks[currentWeek].draw[key]
-);
-
-},0);
-
-
-cell.addEventListener(
-"click",
-()=>openEditor(row,column)
-);
-
-});
-
-body.appendChild(tr);
-
-});
-
-}
-
-
-/* =========================
-   ÉDITEUR
-========================= */
-
-const bigCanvas =
-document.getElementById("bigCanvas");
+const TEAM_COUNT = 6;
+const STORAGE_KEY = "horaireTactile";
+
+let data = loadData();
+let currentWeek = getMonday(new Date());
+let selectedTeam = null;
+let selectedDay = null;
+
+let canvas;
+let ctx;
 
 let drawing = false;
+let erasing = false;
 
-let lastX = 0;
-let lastY = 0;
+let strokes = [];
+let currentStroke = null;
 
-
-function openEditor(row,column){
-
-activeCell =
-row+"_"+column;
-
-document.getElementById("schedule")
-.style.display = "none";
-
-document.getElementById("editor")
-.style.display = "block";
-
-document.getElementById("editorTitle")
-.textContent =
-teams[row]+" — "+days[column];
-
-
-setTimeout(()=>{
-
-setupCanvas(bigCanvas);
-
-loadDrawing(
-bigCanvas,
-weeks[currentWeek].draw[activeCell]
-);
-
-},50);
-
+function loadData() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
+      teams: [
+        "Équipe 1",
+        "Équipe 2",
+        "Équipe 3",
+        "Équipe 4",
+        "Équipe 5",
+        "Équipe 6"
+      ],
+      weeks: {}
+    };
+  } catch {
+    return {
+      teams: [
+        "Équipe 1",
+        "Équipe 2",
+        "Équipe 3",
+        "Équipe 4",
+        "Équipe 5",
+        "Équipe 6"
+      ],
+      weeks: {}
+    };
+  }
 }
 
-
-function pointerPosition(e){
-
-const rect =
-bigCanvas.getBoundingClientRect();
-
-return [
-e.clientX - rect.left,
-e.clientY - rect.top
-];
-
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
+function getMonday(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
 
-bigCanvas.addEventListener(
-"pointerdown",
-e=>{
+  d.setHours(12,0,0,0);
+  d.setDate(diff);
 
-e.preventDefault();
-
-drawing = true;
-
-bigCanvas.setPointerCapture(
-e.pointerId
-);
-
-[lastX,lastY] =
-pointerPosition(e);
-
-});
-
-
-bigCanvas.addEventListener(
-"pointermove",
-e=>{
-
-if(!drawing) return;
-
-e.preventDefault();
-
-const [x,y] =
-pointerPosition(e);
-
-const ctx =
-bigCanvas.getContext("2d");
-
-if(drawingMode === "eraser"){
-
-ctx.globalCompositeOperation =
-"destination-out";
-
-ctx.lineWidth = 25;
-
-}else{
-
-ctx.globalCompositeOperation =
-"source-over";
-
-ctx.strokeStyle = "#222";
-
-ctx.lineWidth = 3;
-
+  return d;
 }
 
-ctx.beginPath();
+function dateKey(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth()+1).padStart(2,"0");
+  const d = String(date.getDate()).padStart(2,"0");
 
-ctx.moveTo(lastX,lastY);
-
-ctx.lineTo(x,y);
-
-ctx.stroke();
-
-lastX = x;
-lastY = y;
-
-});
-
-
-bigCanvas.addEventListener(
-"pointerup",
-()=> drawing=false
-);
-
-bigCanvas.addEventListener(
-"pointercancel",
-()=> drawing=false
-);
-
-
-/* STYLET */
-
-document.getElementById("pen")
-.addEventListener("click",()=>{
-
-drawingMode = "pen";
-
-pen.classList.add("active");
-eraser.classList.remove("active");
-
-});
-
-
-/* GOMME */
-
-document.getElementById("eraser")
-.addEventListener("click",()=>{
-
-drawingMode = "eraser";
-
-eraser.classList.add("active");
-pen.classList.remove("active");
-
-});
-
-
-/* EFFACER */
-
-document.getElementById("clear")
-.addEventListener("click",()=>{
-
-const ctx =
-bigCanvas.getContext("2d");
-
-ctx.clearRect(
-0,
-0,
-bigCanvas.width,
-bigCanvas.height
-);
-
-});
-
-
-/* TERMINÉ */
-
-document.getElementById("done")
-.addEventListener("click",()=>{
-
-weeks[currentWeek]
-.draw[activeCell] =
-bigCanvas.toDataURL("image/png");
-
-saveData();
-
-document.getElementById("editor")
-.style.display = "none";
-
-document.getElementById("schedule")
-.style.display = "block";
-
-render();
-
-});
-
-
-/* =========================
-   SEMAINES
-========================= */
-
-document.getElementById("newWeek")
-.addEventListener("click",()=>{
-
-weeks.push({
-name:"Semaine "+(weeks.length+1),
-draw:{}
-});
-
-currentWeek =
-weeks.length-1;
-
-saveData();
-
-render();
-
-});
-
-
-document.getElementById("previous")
-.addEventListener("click",()=>{
-
-if(currentWeek > 0){
-
-currentWeek--;
-
-saveData();
-
-render();
-
+  return `${y}-${m}-${d}`;
 }
 
-});
-
-
-document.getElementById("next")
-.addEventListener("click",()=>{
-
-if(currentWeek < weeks.length-1){
-
-currentWeek++;
-
-}else{
-
-weeks.push({
-name:"Semaine "+(weeks.length+1),
-draw:{}
-});
-
-currentWeek =
-weeks.length-1;
-
+function formatDate(date) {
+  return date.toLocaleDateString(
+    "fr-CA",
+    {
+      day: "numeric",
+      month: "long"
+    }
+  );
 }
 
-saveData();
+function weekKey() {
+  return dateKey(currentWeek);
+}
 
-render();
+function ensureWeek() {
+  const key = weekKey();
 
+  if (!data.weeks[key]) {
+    data.weeks[key] = {};
+
+    for (let team = 0; team < TEAM_COUNT; team++) {
+      data.weeks[key][team] = {};
+
+      for (let day = 0; day < 7; day++) {
+        data.weeks[key][team][day] = {
+          text: ""
+        };
+      }
+    }
+
+    saveData();
+  }
+}
+
+function render() {
+  ensureWeek();
+
+  const sunday = new Date(currentWeek);
+  sunday.setDate(sunday.getDate() + 6);
+
+  document.getElementById("weekTitle").textContent =
+    `Semaine du ${formatDate(currentWeek)} au ${formatDate(sunday)}`;
+
+  const body = document.getElementById("scheduleBody");
+  body.innerHTML = "";
+
+  for (let team = 0; team < TEAM_COUNT; team++) {
+
+    const tr = document.createElement("tr");
+
+    const teamCell = document.createElement("td");
+    teamCell.className = "team-cell";
+
+    const input = document.createElement("input");
+    input.className = "team-name";
+    input.value = data.teams[team] || `Équipe ${team+1}`;
+
+    input.addEventListener("change", () => {
+      data.teams[team] = input.value;
+      saveData();
+    });
+
+    teamCell.appendChild(input);
+    tr.appendChild(teamCell);
+
+    for (let day = 0; day < 7; day++) {
+
+      const td = document.createElement("td");
+      td.className = "job-cell";
+
+      const text = document.createElement("div");
+      text.className = "cell-text";
+
+      const cellData =
+        data.weeks[weekKey()][team][day];
+
+      text.textContent = cellData.text || "";
+
+      td.appendChild(text);
+
+      td.addEventListener("click", () => {
+        openEditor(team, day);
+      });
+
+      tr.appendChild(td);
+    }
+
+    body.appendChild(tr);
+  }
+}
+
+document.getElementById("prevWeek")
+.addEventListener("click", () => {
+  currentWeek.setDate(currentWeek.getDate() - 7);
+  currentWeek = new Date(currentWeek);
+  render();
 });
 
-
-document.getElementById("weekSelect")
-.addEventListener("change",e=>{
-
-currentWeek =
-Number(e.target.value);
-
-saveData();
-
-render();
-
+document.getElementById("nextWeek")
+.addEventListener("click", () => {
+  currentWeek.setDate(currentWeek.getDate() + 7);
+  currentWeek = new Date(currentWeek);
+  render();
 });
 
+/* ==============================
+   ÉDITEUR D'ÉCRITURE
+================================ */
+
+const overlay =
+  document.getElementById("editorOverlay");
+
+canvas =
+  document.getElementById("writingCanvas");
+
+ctx =
+  canvas.getContext("2d");
+
+function resizeCanvas() {
+  const rect =
+    document.getElementById("canvasWrap")
+    .getBoundingClientRect();
+
+  const ratio =
+    window.devicePixelRatio || 1;
+
+  canvas.width =
+    Math.round(rect.width * ratio);
+
+  canvas.height =
+    Math.round(rect.height * ratio);
+
+  canvas.style.width =
+    rect.width + "px";
+
+  canvas.style.height =
+    rect.height + "px";
+
+  ctx.setTransform(
+    ratio,
+    0,
+    0,
+    ratio,
+    0,
+    0
+  );
+
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+}
+
+function openEditor(team, day) {
+
+  selectedTeam = team;
+  selectedDay = day;
+
+  strokes = [];
+  currentStroke = null;
+
+  document.getElementById("editorTitle")
+  .textContent =
+    `${data.teams[team]} — ${DAYS[day]}`;
+
+  document.getElementById("status")
+  .textContent =
+    "Écris avec le S Pen, puis appuie sur « Reconnaître l'écriture ».";
+
+  overlay.style.display = "block";
+
+  setTimeout(() => {
+    resizeCanvas();
+    clearCanvasOnly();
+  }, 50);
+}
+
+function closeEditor() {
+  overlay.style.display = "none";
+}
+
+function clearCanvasOnly() {
+  const rect = canvas.getBoundingClientRect();
+
+  ctx.clearRect(
+    0,
+    0,
+    rect.width,
+    rect.height
+  );
+}
+
+function getPoint(event) {
+
+  const rect =
+    canvas.getBoundingClientRect();
+
+  return {
+    x: event.clientX - rect.left,
+    y: event.clientY - rect.top,
+    t: Date.now()
+  };
+}
+
+canvas.addEventListener(
+  "pointerdown",
+  event => {
+
+    event.preventDefault();
+
+    canvas.setPointerCapture(
+      event.pointerId
+    );
+
+    drawing = true;
+
+    const p = getPoint(event);
+
+    if (erasing) {
+
+      ctx.globalCompositeOperation =
+        "destination-out";
+
+      ctx.lineWidth = 30;
+
+    } else {
+
+      ctx.globalCompositeOperation =
+        "source-over";
+
+      ctx.strokeStyle = "#111";
+      ctx.lineWidth = 3;
+
+      currentStroke = {
+        x: [p.x],
+        y: [p.y],
+        t: [0]
+      };
+
+      currentStroke.startTime = p.t;
+    }
+
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+  }
+);
+
+canvas.addEventListener(
+  "pointermove",
+  event => {
+
+    if (!drawing) return;
+
+    event.preventDefault();
+
+    const p = getPoint(event);
+
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+
+    if (
+      !erasing &&
+      currentStroke
+    ) {
+
+      currentStroke.x.push(p.x);
+      currentStroke.y.push(p.y);
+
+      currentStroke.t.push(
+        p.t -
+        currentStroke.startTime
+      );
+    }
+  }
+);
+
+function stopDrawing(event) {
+
+  if (!drawing) return;
+
+  drawing = false;
+
+  ctx.closePath();
+
+  if (
+    !erasing &&
+    currentStroke &&
+    currentStroke.x.length > 0
+  ) {
+
+    delete currentStroke.startTime;
+
+    strokes.push(currentStroke);
+  }
+
+  currentStroke = null;
+}
+
+canvas.addEventListener(
+  "pointerup",
+  stopDrawing
+);
+
+canvas.addEventListener(
+  "pointercancel",
+  stopDrawing
+);
+
+document.getElementById("penBtn")
+.addEventListener("click", () => {
+
+  erasing = false;
+
+  document.getElementById("status")
+  .textContent = "Crayon activé.";
+});
+
+document.getElementById("eraserBtn")
+.addEventListener("click", () => {
+
+  erasing = true;
+
+  document.getElementById("status")
+  .textContent =
+    "Efface activée. Pour la reconnaissance, utilise « Effacer tout » si tu recommences complètement.";
+});
+
+document.getElementById("clearBtn")
+.addEventListener("click", () => {
+
+  strokes = [];
+  currentStroke = null;
+
+  clearCanvasOnly();
+
+  document.getElementById("status")
+  .textContent = "Zone effacée.";
+});
+
+document.getElementById("cancelBtn")
+.addEventListener("click", closeEditor);
+
+/* ==============================
+   RECONNAISSANCE MYSCRIPT
+================================ */
+
+async function recognizeWriting() {
+
+  const status =
+    document.getElementById("status");
+
+  if (!strokes.length) {
+
+    status.textContent =
+      "Écris quelque chose avant de lancer la reconnaissance.";
+
+    return;
+  }
+
+  status.textContent =
+    "Reconnaissance de l'écriture en cours…";
+
+  const rect =
+    canvas.getBoundingClientRect();
+
+  const requestBody = {
+    scaleX: 1,
+    scaleY: 1,
+    contentType: "Text",
+
+    configuration: {
+      lang: "fr_FR"
+    },
+
+    width: rect.width,
+    height: rect.height,
+
+    strokes: strokes
+  };
+
+  try {
+
+    const response =
+      await fetch(
+        WORKER_URL,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body:
+            JSON.stringify(
+              requestBody
+            )
+        }
+      );
+
+    const raw =
+      await response.text();
+
+    if (!response.ok) {
+      throw new Error(raw);
+    }
+
+    let recognizedText = "";
+
+    try {
+
+      const result =
+        JSON.parse(raw);
+
+      recognizedText =
+        result.label ||
+        result.text ||
+        result.recognizedText ||
+        "";
+
+      if (
+        !recognizedText &&
+        result.words
+      ) {
+        recognizedText =
+          result.words
+          .map(w =>
+            w.label || w.text || ""
+          )
+          .join(" ");
+      }
+
+    } catch {
+
+      recognizedText = raw;
+    }
+
+    recognizedText =
+      recognizedText.trim();
+
+    if (!recognizedText) {
+
+      status.textContent =
+        "MyScript a répondu, mais aucun texte n'a été reconnu.";
+
+      return;
+    }
+
+    data.weeks[weekKey()]
+      [selectedTeam]
+      [selectedDay]
+      .text =
+        recognizedText;
+
+    saveData();
+
+    status.textContent =
+      `Reconnu : ${recognizedText}`;
+
+    render();
+
+  } catch (error) {
+
+    console.error(error);
+
+    status.textContent =
+      "Erreur de reconnaissance. Nous vérifierons la connexion au Worker.";
+  }
+}
+
+document.getElementById("recognizeBtn")
+.addEventListener(
+  "click",
+  recognizeWriting
+);
+
+document.getElementById("doneBtn")
+.addEventListener(
+  "click",
+  () => {
+    saveData();
+    render();
+    closeEditor();
+  }
+);
+
+window.addEventListener(
+  "resize",
+  () => {
+    if (
+      overlay.style.display ===
+      "block"
+    ) {
+      resizeCanvas();
+    }
+  }
+);
 
 render();
-
 </script>
 
 </body>
