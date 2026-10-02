@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Horaire tactile</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 15px;
+  font-family: Arial, sans-serif;
+  background: #f4f4f4;
+  color: #222;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+button, select, input {
+  min-height: 46px;
+  font-size: 16px;
+  border: 1px solid #bbb;
+  border-radius: 8px;
+  background: white;
+  padding: 8px 12px;
+}
+
+button {
+  cursor: pointer;
+}
+
+.week-title {
+  font-size: 22px;
+  font-weight: bold;
+  min-width: 280px;
+  text-align: center;
+}
+
+.board {
+  overflow-x: auto;
+  background: white;
+  border: 1px solid #aaa;
+  border-radius: 10px;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 1100px;
+  table-layout: fixed;
+}
+
+th, td {
+  border: 1px solid #aaa;
+}
+
+th {
+  height: 50px;
+  background: #e9ecef;
+}
+
+th:first-child {
+  width: 135px;
+}
+
+td {
+  height: 125px;
+  position: relative;
+  background: white;
+}
+
+.team {
+  background: #f5f5f5;
+  padding: 5px;
+}
+
+.team input {
+  width: 100%;
+  text-align: center;
+  font-weight: bold;
+}
+
+.cell {
+  position: relative;
+  width: 100%;
+  height: 123px;
+  cursor: pointer;
+}
+
+.cell canvas {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.zoom-label {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  background: rgba(255,255,255,.9);
+  border-radius: 5px;
+  padding: 3px 6px;
+  font-size: 12px;
+}
+
+/* ÉDITEUR */
+
+#editor {
+  display: none;
+}
+
+.editor-toolbar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.editor-title {
+  font-size: 22px;
+  font-weight: bold;
+  flex: 1;
+}
+
+.write-area {
+  width: 100%;
+  height: 65vh;
+  min-height: 350px;
+  background: white;
+  border: 2px solid #999;
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+#bigCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.active {
+  border: 3px solid #333;
+  font-weight: bold;
+}
+
+.done {
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.status {
+  font-size: 14px;
+  color: #555;
+}
+
+.help {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #555;
+}
+</style>
+</head>
+
+<body>
+
+<div id="schedule">
+
+<div class="toolbar">
+
+<button id="previous">‹</button>
+
+<div class="week-title" id="weekTitle">
+Horaire
+</div>
+
+<button id="next">›</button>
+
+<button id="newWeek">
++ Nouvelle semaine
+</button>
+
+<select id="weekSelect"></select>
+
+<span class="status" id="status">
+Sauvegarde automatique
+</span>
+
+</div>
+
+<div class="board">
+
+<table>
+
+<thead>
+<tr>
+<th>Équipe</th>
+<th>Lundi</th>
+<th>Mardi</th>
+<th>Mercredi</th>
+<th>Jeudi</th>
+<th>Vendredi</th>
+<th>Samedi</th>
+<th>Dimanche</th>
+</tr>
+</thead>
+
+<tbody id="scheduleBody"></tbody>
+
+</table>
+
+</div>
+
+<div class="help">
+Touchez une case pour l'agrandir et écrire avec le S Pen.
+</div>
+
+</div>
+
+
+<!-- GRANDE CASE -->
+
+<div id="editor">
+
+<div class="editor-toolbar">
+
+<div class="editor-title" id="editorTitle">
+Équipe
+</div>
+
+<button id="pen" class="active">
+✍️ Stylet
+</button>
+
+<button id="eraser">
+🧽 Gomme
+</button>
+
+<button id="clear">
+Effacer tout
+</button>
+
+<button id="done" class="done">
+✓ Terminé
+</button>
+
+</div>
+
+<div class="write-area">
+
+<canvas id="bigCanvas"></canvas>
+
+</div>
+
+<div class="help">
+Écrivez dans cette grande zone avec le S Pen.
+</div>
+
+</div>
+
+
+<script>
+
+const days = [
+"Lundi",
+"Mardi",
+"Mercredi",
+"Jeudi",
+"Vendredi",
+"Samedi",
+"Dimanche"
+];
+
+let teams = [
+"Équipe 1",
+"Équipe 2",
+"Équipe 3",
+"Équipe 4",
+"Équipe 5",
+"Équipe 6"
+];
+
+let weeks = [];
+
+let currentWeek = 0;
+
+let activeCell = null;
+
+let drawingMode = "pen";
+
+
+/* =========================
+   SAUVEGARDE
+========================= */
+
+function saveData(){
+
+localStorage.setItem(
+"horaireTactile",
+JSON.stringify({
+teams,
+weeks,
+currentWeek
+})
+);
+
+document.getElementById("status").textContent =
+"✓ Enregistré";
+
+}
+
+
+function loadData(){
+
+const saved =
+localStorage.getItem("horaireTactile");
+
+if(saved){
+
+try{
+
+const data = JSON.parse(saved);
+
+teams = data.teams || teams;
+
+weeks = data.weeks || [];
+
+currentWeek = data.currentWeek || 0;
+
+}catch(e){}
+
+}
+
+if(weeks.length === 0){
+
+weeks.push({
+name:"Semaine 1",
+draw:{}
+});
+
+}
+
+}
+
+loadData();
+
+
+/* =========================
+   CANVAS
+========================= */
+
+function setupCanvas(canvas){
+
+const rect =
+canvas.getBoundingClientRect();
+
+const ratio =
+window.devicePixelRatio || 1;
+
+canvas.width =
+rect.width * ratio;
+
+canvas.height =
+rect.height * ratio;
+
+const ctx =
+canvas.getContext("2d");
+
+ctx.scale(ratio,ratio);
+
+ctx.lineCap = "round";
+ctx.lineJoin = "round";
+
+}
+
+
+function loadDrawing(canvas,data){
+
+if(!data) return;
+
+const img = new Image();
+
+img.onload = function(){
+
+const rect =
+canvas.getBoundingClientRect();
+
+canvas.getContext("2d")
+.drawImage(
+img,
+0,
+0,
+rect.width,
+rect.height
+);
+
+};
+
+img.src = data;
+
+}
+
+
+/* =========================
+   TABLEAU
+========================= */
+
+function render(){
+
+const body =
+document.getElementById("scheduleBody");
+
+body.innerHTML = "";
+
+document.getElementById("weekTitle")
+.textContent =
+weeks[currentWeek].name;
+
+
+const select =
+document.getElementById("weekSelect");
+
+select.innerHTML = "";
+
+weeks.forEach((week,index)=>{
+
+const option =
+document.createElement("option");
+
+option.value = index;
+option.textContent = week.name;
+
+select.appendChild(option);
+
+});
+
+select.value = currentWeek;
+
+
+teams.forEach((team,row)=>{
+
+const tr =
+document.createElement("tr");
+
+
+/* NOM ÉQUIPE */
+
+const teamCell =
+document.createElement("td");
+
+teamCell.className =
+"team";
+
+const input =
+document.createElement("input");
+
+input.value = team;
+
+input.addEventListener(
+"change",
+()=>{
+
+teams[row] =
+input.value || "Équipe "+(row+1);
+
+saveData();
+
+});
+
+teamCell.appendChild(input);
+
+tr.appendChild(teamCell);
+
+
+/* JOURS */
+
+days.forEach((day,column)=>{
+
+const td =
+document.createElement("td");
+
+const cell =
+document.createElement("div");
+
+cell.className =
+"cell";
+
+const canvas =
+document.createElement("canvas");
+
+const label =
+document.createElement("div");
+
+label.className =
+"zoom-label";
+
+label.textContent =
+"↗ Agrandir";
+
+cell.appendChild(canvas);
+cell.appendChild(label);
+
+td.appendChild(cell);
+
+tr.appendChild(td);
+
+
+const key =
+row+"_"+column;
+
+
+setTimeout(()=>{
+
+setupCanvas(canvas);
+
+loadDrawing(
+canvas,
+weeks[currentWeek].draw[key]
+);
+
+},0);
+
+
+cell.addEventListener(
+"click",
+()=>openEditor(row,column)
+);
+
+});
+
+body.appendChild(tr);
+
+});
+
+}
+
+
+/* =========================
+   ÉDITEUR
+========================= */
+
+const bigCanvas =
+document.getElementById("bigCanvas");
+
+let drawing = false;
+
+let lastX = 0;
+let lastY = 0;
+
+
+function openEditor(row,column){
+
+activeCell =
+row+"_"+column;
+
+document.getElementById("schedule")
+.style.display = "none";
+
+document.getElementById("editor")
+.style.display = "block";
+
+document.getElementById("editorTitle")
+.textContent =
+teams[row]+" — "+days[column];
+
+
+setTimeout(()=>{
+
+setupCanvas(bigCanvas);
+
+loadDrawing(
+bigCanvas,
+weeks[currentWeek].draw[activeCell]
+);
+
+},50);
+
+}
+
+
+function pointerPosition(e){
+
+const rect =
+bigCanvas.getBoundingClientRect();
+
+return [
+e.clientX - rect.left,
+e.clientY - rect.top
+];
+
+}
+
+
+bigCanvas.addEventListener(
+"pointerdown",
+e=>{
+
+e.preventDefault();
+
+drawing = true;
+
+bigCanvas.setPointerCapture(
+e.pointerId
+);
+
+[lastX,lastY] =
+pointerPosition(e);
+
+});
+
+
+bigCanvas.addEventListener(
+"pointermove",
+e=>{
+
+if(!drawing) return;
+
+e.preventDefault();
+
+const [x,y] =
+pointerPosition(e);
+
+const ctx =
+bigCanvas.getContext("2d");
+
+if(drawingMode === "eraser"){
+
+ctx.globalCompositeOperation =
+"destination-out";
+
+ctx.lineWidth = 25;
+
+}else{
+
+ctx.globalCompositeOperation =
+"source-over";
+
+ctx.strokeStyle = "#222";
+
+ctx.lineWidth = 3;
+
+}
+
+ctx.beginPath();
+
+ctx.moveTo(lastX,lastY);
+
+ctx.lineTo(x,y);
+
+ctx.stroke();
+
+lastX = x;
+lastY = y;
+
+});
+
+
+bigCanvas.addEventListener(
+"pointerup",
+()=> drawing=false
+);
+
+bigCanvas.addEventListener(
+"pointercancel",
+()=> drawing=false
+);
+
+
+/* STYLET */
+
+document.getElementById("pen")
+.addEventListener("click",()=>{
+
+drawingMode = "pen";
+
+pen.classList.add("active");
+eraser.classList.remove("active");
+
+});
+
+
+/* GOMME */
+
+document.getElementById("eraser")
+.addEventListener("click",()=>{
+
+drawingMode = "eraser";
+
+eraser.classList.add("active");
+pen.classList.remove("active");
+
+});
+
+
+/* EFFACER */
+
+document.getElementById("clear")
+.addEventListener("click",()=>{
+
+const ctx =
+bigCanvas.getContext("2d");
+
+ctx.clearRect(
+0,
+0,
+bigCanvas.width,
+bigCanvas.height
+);
+
+});
+
+
+/* TERMINÉ */
+
+document.getElementById("done")
+.addEventListener("click",()=>{
+
+weeks[currentWeek]
+.draw[activeCell] =
+bigCanvas.toDataURL("image/png");
+
+saveData();
+
+document.getElementById("editor")
+.style.display = "none";
+
+document.getElementById("schedule")
+.style.display = "block";
+
+render();
+
+});
+
+
+/* =========================
+   SEMAINES
+========================= */
+
+document.getElementById("newWeek")
+.addEventListener("click",()=>{
+
+weeks.push({
+name:"Semaine "+(weeks.length+1),
+draw:{}
+});
+
+currentWeek =
+weeks.length-1;
+
+saveData();
+
+render();
+
+});
+
+
+document.getElementById("previous")
+.addEventListener("click",()=>{
+
+if(currentWeek > 0){
+
+currentWeek--;
+
+saveData();
+
+render();
+
+}
+
+});
+
+
+document.getElementById("next")
+.addEventListener("click",()=>{
+
+if(currentWeek < weeks.length-1){
+
+currentWeek++;
+
+}else{
+
+weeks.push({
+name:"Semaine "+(weeks.length+1),
+draw:{}
+});
+
+currentWeek =
+weeks.length-1;
+
+}
+
+saveData();
+
+render();
+
+});
+
+
+document.getElementById("weekSelect")
+.addEventListener("change",e=>{
+
+currentWeek =
+Number(e.target.value);
+
+saveData();
+
+render();
+
+});
+
+
+render();
+
+</script>
+
+</body>
+</html>
